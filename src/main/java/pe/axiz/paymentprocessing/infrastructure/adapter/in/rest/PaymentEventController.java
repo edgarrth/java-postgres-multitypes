@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pe.axiz.paymentprocessing.domain.model.EventStatus;
 import pe.axiz.paymentprocessing.domain.model.PaymentOutboxEvent;
+import pe.axiz.paymentprocessing.domain.model.PaymentEventNotification;
 import pe.axiz.paymentprocessing.domain.port.in.PaymentEventUseCase;
 
 import java.util.List;
@@ -36,6 +37,11 @@ public class PaymentEventController {
     @PatchMapping("/{id}/published")
     PaymentOutboxEvent markPublished(@PathVariable UUID id) {
         return useCase.markAsPublished(id);
+    }
+
+    @GetMapping("/notifications")
+    List<PaymentEventNotification> findRecentNotifications(@RequestParam(defaultValue = "20") int limit) {
+        return useCase.findRecentNotifications(limit);
     }
 
     public record AppendPaymentEventRequest(

@@ -24,3 +24,11 @@ logging:
   level:
     root: INFO
     pe.axiz: INFO
+
+payment:
+  events:
+    listen-notify:
+      enabled: ${PAYMENT_EVENTS_LISTEN_NOTIFY_ENABLED:true}
+      channel: ${PAYMENT_EVENTS_LISTEN_NOTIFY_CHANNEL:payment_events}
+      poll-timeout-millis: ${PAYMENT_EVENTS_LISTEN_NOTIFY_POLL_TIMEOUT_MILLIS:1000}
+      reconnect-delay-millis: ${PAYMENT_EVENTS_LISTEN_NOTIFY_RECONNECT_DELAY_MILLIS:2000}
