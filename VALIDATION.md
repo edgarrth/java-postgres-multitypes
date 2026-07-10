@@ -102,3 +102,24 @@ Validación completa esperada en ambiente local con JDK 25 y Maven:
 ```bash
 mvn clean verify
 ```
+
+## Corrección adicional - Flyway PostgreSQL runtime
+
+Se corrigió el error reportado en `mvn spring-boot:run`:
+
+```text
+Unsupported Database: PostgreSQL 16.14
+```
+
+Causa: el proyecto tenía `spring-boot-starter-flyway`, pero faltaba el módulo específico de base de datos `org.flywaydb:flyway-database-postgresql`, necesario para que Flyway 12 reconozca PostgreSQL en runtime.
+
+Cambio aplicado en `pom.xml`:
+
+```xml
+<dependency>
+    <groupId>org.flywaydb</groupId>
+    <artifactId>flyway-database-postgresql</artifactId>
+</dependency>
+```
+
+Validación local en este sandbox: no fue posible ejecutar `mvn spring-boot:run` porque no hay Maven ni JDK 25 instalados; sí se validó el parseo XML del `pom.xml` actualizado.

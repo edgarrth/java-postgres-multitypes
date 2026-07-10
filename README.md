@@ -23,6 +23,7 @@ El objetivo es demostrar, en un único microservicio, seis capacidades de Postgr
 - **Spring MVC** mediante `spring-boot-starter-webmvc`, evitando el starter clásico `spring-boot-starter-web`.
 - **JDBC + JdbcTemplate**, porque permite usar capacidades nativas de PostgreSQL (`tsvector`, `vector`, `jsonb`, `bytea`, `LISTEN/NOTIFY`) sin forzar un ORM donde no aporta valor en la PoC.
 - **Flyway como único mecanismo de schema + seed data**. No hay scripts duplicados de inicialización en Docker.
+- **Módulo PostgreSQL de Flyway** declarado explícitamente con `org.flywaydb:flyway-database-postgresql`, requerido por Flyway 12 para reconocer PostgreSQL en runtime.
 - **Infraestructura mínima**: solo PostgreSQL con pgvector. No se agrega Kafka, RabbitMQ ni Redis porque el objetivo es demostrar PostgreSQL como base, cache y mecanismo de eventos.
 - **Eventos con patrón híbrido Outbox + `LISTEN/NOTIFY`**: el evento queda persistido en Outbox para durabilidad y `NOTIFY` despierta al microservicio cuando hay un nuevo evento o cambio de estado.
 
