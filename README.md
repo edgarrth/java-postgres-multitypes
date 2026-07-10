@@ -1,8 +1,8 @@
 # PostgreSQL Multitypes
 
-La PoC busca demostrar, en un único microservicio, seis capacidades de PostgreSQL aplicadas a payment processing:
+PoC que muestra el uso de los diferentes tipos de datos que se pueden usar en postgres:
 
-| Capacidad PostgreSQL | Tabla principal dedicada | Caso de uso fintech |
+| Capacidad PostgreSQL | Tabla principal dedicada | Caso de uso |
 |---|---|---|
 | `tsvector` | `payment_search_documents` | Búsqueda full-text de pagos, conciliaciones, canales y descripciones operativas. |
 | `pgvector` | `payment_semantic_rules` | Búsqueda semántica de reglas de enrutamiento o decisión de pagos. |
