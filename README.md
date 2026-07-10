@@ -465,8 +465,10 @@ Content-Type: application/json
 Qué ocurre internamente:
 
 1. El endpoint inserta el evento en `payment_outbox_events` con estado `PENDING`.
-2. El trigger `trg_notify_payment_outbox_event` ejecuta `pg_notify('payment_events', '{eventId, action}')`. No envía todo el evento para evitar el límite de tamaño de `NOTIFY`.
-3. `PostgresPaymentEventNotificationListener` recibe el `NOTIFY` mediante `LISTEN payment_events`, consulta el evento por `eventId` en Outbox y reconstruye la notificación completa.
+2. El trigger `trg_notify_payment_outbox_event` ejecuta `pg_notify('payment_events', '{eventId, action}')`. 
+No envía todo el evento para evitar el límite de tamaño de `NOTIFY`.
+3. `PostgresPaymentEventNotificationListener` recibe el `NOTIFY` mediante `LISTEN payment_events`, 
+consulta el evento por `eventId` en Outbox y reconstruye la notificación completa.
 4. El listener guarda la evidencia en `payment_event_notifications`.
 
 ## 10. Consultar eventos Outbox
