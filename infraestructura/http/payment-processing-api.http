@@ -1,0 +1,91 @@
+### 1. tsvector - insertar documento indexado
+POST http://localhost:8080/api/v1/payment-search-documents
+Content-Type: application/json
+
+{
+  "paymentReference": "PAY-QR-9001",
+  "channel": "QR",
+  "description": "Pago QR aprobado para comercio veterinaria con liquidación inmediata"
+}
+
+### 2. tsvector - buscar texto completo
+GET http://localhost:8080/api/v1/payment-search-documents?query=pago qr comercio
+
+### 3. pgvector - insertar regla semántica
+POST http://localhost:8080/api/v1/payment-semantic-rules
+Content-Type: application/json
+
+{
+  "ruleCode": "ROUTE-CARD-LOW-RISK",
+  "title": "Ruta tarjeta bajo riesgo",
+  "description": "Procesar pagos con tarjeta de bajo monto usando adquirente principal y autorización inmediata"
+}
+
+### 4. pgvector - buscar reglas cercanas
+GET http://localhost:8080/api/v1/payment-semantic-rules/nearest?text=pagos con tarjeta de monto bajo&limit=3
+
+### 5. cache - guardar decisión temporal
+PUT http://localhost:8080/api/v1/payment-cache/merchant-risk:MRC-2001
+Content-Type: application/json
+
+{
+  "ttlSeconds": 3600,
+  "value": {
+    "merchantId": "MRC-2001",
+    "riskLevel": "LOW",
+    "decision": "ALLOW"
+  }
+}
+
+### 6. cache - leer decisión temporal
+GET http://localhost:8080/api/v1/payment-cache/merchant-risk:MRC-2001
+
+### 7. jsonb - insertar perfil flexible
+POST http://localhost:8080/api/v1/payment-profiles
+Content-Type: application/json
+
+{
+  "profileCode": "PROFILE-MERCHANT-NEW",
+  "documentNumber": "20445566778",
+  "attributes": {
+    "customerSegment": "SME",
+    "merchantCategory": "retail",
+    "riskLevel": "MEDIUM",
+    "settlementMode": "T1"
+  }
+}
+
+### 8. jsonb - consultar por atributo
+GET http://localhost:8080/api/v1/payment-profiles?attributeName=riskLevel&value=LOW
+
+### 9. eventos - crear evento outbox
+POST http://localhost:8080/api/v1/payment-events
+Content-Type: application/json
+
+{
+  "aggregateId": "PAY-QR-9001",
+  "eventType": "PaymentAuthorized",
+  "payload": {
+    "paymentReference": "PAY-QR-9001",
+    "amount": 150.90,
+    "currency": "PEN",
+    "channel": "QR"
+  }
+}
+
+### 10. eventos - listar pendientes
+GET http://localhost:8080/api/v1/payment-events?status=PENDING
+
+### 11. bytea - insertar PEM base64
+POST http://localhost:8080/api/v1/payment-certificates
+Content-Type: application/json
+
+{
+  "alias": "processor-secondary-public-key",
+  "owner": "Secondary Payment Processor",
+  "algorithm": "RSA",
+  "base64Pem": "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUZ3d0RRWUpLb1pJaHZjTkFRRUJCUUFEU3dBd1NBSkJBTHYybkRlbW9Pbmx5Rm9yQXhpelBvY05vdFJlYWxLZXkKOVFJREFRQUIKLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tCg=="
+}
+
+### 12. bytea - consultar certificado con PEM
+GET http://localhost:8080/api/v1/payment-certificates/processor-secondary-public-key?includePem=true

@@ -1,0 +1,14 @@
+{
+  "profileCode": "PROFILE-MERCHANT-NEW",
+  "documentNumber": "20445566778",
+  "attributes": {
+    "customerSegment": "SME",
+    "merchantCategory": "retail",
+    "riskLevel": "MEDIUM",
+    "settlementMode": "T1",
+    "limits": {
+      "dailyAmountPen": 5000,
+      "singlePaymentPen": 800
+    }
+  }
+}

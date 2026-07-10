@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: pgvector/pgvector:0.8.5-pg16
+    container_name: axiz-payment-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: axiz_payments
+      POSTGRES_USER: axiz
+      POSTGRES_PASSWORD: axiz_secret
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U axiz -d axiz_payments"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+    volumes:
+      - axiz-payment-postgres-data:/var/lib/postgresql/data
+
+volumes:
+  axiz-payment-postgres-data:
