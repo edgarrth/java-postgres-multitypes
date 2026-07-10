@@ -1,8 +1,6 @@
-# Axiz Payment Processing PostgreSQL PoC
+# PostgreSQL Multitypes
 
-Microservicio REST de demostración para una fintech de pagos. La PoC implementa **DDD táctico** con **arquitectura hexagonal**, **Java 25**, **Spring Boot 4.1.0**, **Spring MVC**, **Jackson 2**, **JDBC**, **Flyway** y **PostgreSQL + pgvector**.
-
-El objetivo es demostrar, en un único microservicio, seis capacidades de PostgreSQL aplicadas a payment processing:
+La PoC busca demostrar, en un único microservicio, seis capacidades de PostgreSQL aplicadas a payment processing:
 
 | Capacidad PostgreSQL | Tabla principal dedicada | Caso de uso fintech |
 |---|---|---|
@@ -13,18 +11,12 @@ El objetivo es demostrar, en un único microservicio, seis capacidades de Postgr
 | Eventos / Outbox + `LISTEN/NOTIFY` | `payment_outbox_events` | Persistencia transaccional de eventos de dominio y notificación asíncrona con PostgreSQL. |
 | `bytea` | `payment_digital_certificates` | Almacenamiento de certificados o llaves públicas PEM de procesadores de pago. |
 
-> Nota: para demostrar `LISTEN/NOTIFY`, se agrega una tabla auxiliar `payment_event_notifications` que registra las notificaciones recibidas por el listener Java. La fuente durable de eventos sigue siendo `payment_outbox_events`.
+# Stack
 
-# Decisiones técnicas principales
-
-- **Java 25** definido en `pom.xml` con `maven.compiler.release=25`.
-- **Spring Boot 4.1.0** como versión base.
-- **Jackson 2** se declara explícitamente con `spring-boot-jackson2`, `jackson-databind` y `jackson-datatype-jsr310`, porque Spring Boot 4 separa más los módulos y el proyecto usa APIs `com.fasterxml.jackson.*`.
-- **Spring MVC** mediante `spring-boot-starter-webmvc`, evitando el starter clásico `spring-boot-starter-web`.
+- **Java 25**
+- **Spring Boot 4.1.0** 
 - **JDBC + JdbcTemplate**, porque permite usar capacidades nativas de PostgreSQL (`tsvector`, `vector`, `jsonb`, `bytea`, `LISTEN/NOTIFY`) sin forzar un ORM donde no aporta valor en la PoC.
 - **Flyway como único mecanismo de schema + seed data**. No hay scripts duplicados de inicialización en Docker.
-- **Módulo PostgreSQL de Flyway** declarado explícitamente con `org.flywaydb:flyway-database-postgresql`, requerido por Flyway 12 para reconocer PostgreSQL en runtime.
-- **Infraestructura mínima**: solo PostgreSQL con pgvector. No se agrega Kafka, RabbitMQ ni Redis porque el objetivo es demostrar PostgreSQL como base, cache y mecanismo de eventos.
 - **Eventos con patrón híbrido Outbox + `LISTEN/NOTIFY`**: el evento queda persistido en Outbox para durabilidad y `NOTIFY` despierta al microservicio cuando hay un nuevo evento o cambio de estado.
 
 # Estructura del proyecto
@@ -125,8 +117,6 @@ sequenceDiagram
     API-->>C: Notificaciones recibidas por listener
 ```
 
-La implementación no reemplaza Outbox con `NOTIFY`. `NOTIFY` no es durable; si el listener no está activo, la notificación se puede perder. Por eso la tabla `payment_outbox_events` sigue siendo la fuente confiable y permite reprocesar eventos `PENDING`.
-
 # Estructura DDD + Hexagonal
 
 ## Dominio
@@ -143,27 +133,6 @@ Contiene el lenguaje del negocio y no depende de Spring:
 - `PaymentEventNotification`: notificación recibida desde PostgreSQL `LISTEN/NOTIFY`.
 - `DigitalCertificate`: certificado/llave pública PEM almacenado como `bytea`.
 
-## Puertos de entrada
-
-Ubicación: `domain/port/in`
-
-Definen los casos de uso consumidos por la capa REST:
-
-- `PaymentSearchUseCase`
-- `SemanticRoutingUseCase`
-- `PaymentCacheUseCase`
-- `PaymentProfileUseCase`
-- `PaymentEventUseCase`
-- `DigitalCertificateUseCase`
-
-## Puertos de salida
-
-Ubicación: `domain/port/out`
-
-Definen las dependencias externas desde el punto de vista del dominio/aplicación:
-
-- Repositorios de documentos, reglas, cache, perfiles, eventos, notificaciones y certificados.
-- `PaymentEventNotificationRepositoryPort` permite persistir y consultar las notificaciones recibidas sin acoplar el caso de uso a PostgreSQL.
 
 ## Servicios de aplicación
 
@@ -180,12 +149,6 @@ Implementan los casos de uso, validaciones de aplicación y coordinación con lo
 - `DeterministicEmbeddingService`
 
 `DeterministicEmbeddingService` crea embeddings determinísticos de 6 dimensiones con SHA-256. En producción, este componente se reemplazaría por un modelo real o servicio de embeddings, manteniendo intacto el puerto/repositorio.
-
-## Adaptadores de entrada REST
-
-Ubicación: `infrastructure/adapter/in/rest`
-
-Exponen endpoints REST, DTOs, validaciones de request y manejo uniforme de errores.
 
 ## Adaptadores de salida PostgreSQL
 
@@ -215,26 +178,6 @@ infraestructura/
 └── http/payment-processing-api.http
 ```
 
-El `docker-compose.yml` levanta únicamente:
-
-- PostgreSQL 16 con extensión pgvector preinstalada mediante imagen `pgvector/pgvector:0.8.5-pg16`.
-
-No se agrega Kafka, RabbitMQ, Redis ni herramientas adicionales porque no son necesarias para validar las seis capacidades solicitadas.
-
-# Datasets y precarga de datos
-
-La carpeta `datasets` contiene:
-
-```text
-datasets/
-├── flyway/
-│   ├── V1__create_payment_processing_schema.sql
-│   ├── V2__seed_payment_processing_data.sql
-│   └── V3__add_payment_event_listen_notify.sql
-├── sample-payment-certificate.pem
-└── sample-payment-profile.json
-```
-
 La precarga se ejecuta automáticamente con Flyway al iniciar el microservicio:
 
 - `V1__create_payment_processing_schema.sql`: crea extensión `vector`, tablas e índices base.
@@ -252,12 +195,6 @@ cd infraestructura
 docker compose up -d
 ```
 
-Validar estado:
-
-```bash
-docker compose ps
-```
-
 Conectarse manualmente:
 
 ```bash
@@ -270,24 +207,6 @@ Con Maven local y JDK 25:
 
 ```bash
 mvn clean verify
-```
-
-Alternativa sin instalar Maven/JDK local, usando Docker:
-
-```bash
-./scripts/maven-with-docker.sh clean verify
-```
-
-Ese script usa la imagen `maven:3.9.11-eclipse-temurin-25`.
-
-# Cómo ejecutar el microservicio
-
-Primero levantar PostgreSQL:
-
-```bash
-cd infraestructura
-docker compose up -d
-cd ..
 ```
 
 Luego ejecutar la aplicación:
@@ -338,7 +257,8 @@ Variables soportadas:
 
 # Request/Response rápido
 
-También puedes usar `infraestructura/http/payment-processing-api.http` desde IntelliJ IDEA, VS Code REST Client o cualquier cliente compatible.
+También puedes usar `infraestructura/http/payment-processing-api.http` desde IntelliJ IDEA, VS 
+Code REST Client o cualquier cliente compatible.
 
 ## 1. Insertar documento `tsvector`
 
@@ -535,53 +455,7 @@ Content-Type: application/json
 }
 ```
 
-# Cómo testear
-
-## Tests automatizados
-
-Ejecutar:
-
-```bash
-mvn test
-```
-
-O con Docker:
-
-```bash
-./scripts/maven-with-docker.sh test
-```
-
-Tests incluidos:
-
-| Test | Qué valida |
-|---|---|
-| `DeterministicEmbeddingServiceTest` | Verifica que el embedding sea estable y de 6 dimensiones. |
-| `PaymentCacheServiceTest` | Verifica escritura/lectura de cache y error cuando no existe. |
-| `DigitalCertificateServiceTest` | Verifica cálculo de fingerprint SHA-256 y almacenamiento del contenido PEM como bytes. |
-
-## Tests manuales end-to-end
-
-1. Levanta PostgreSQL con Docker Compose.
-2. Ejecuta la aplicación.
-3. Abre `infraestructura/http/payment-processing-api.http`.
-4. Ejecuta los requests en orden.
-
-Qué se prueba en cada grupo:
-
-- Requests 1-2: inserción y búsqueda full-text con `tsvector`.
-- Requests 3-4: inserción y búsqueda semántica con `pgvector`.
-- Requests 5-6: escritura y lectura de cache con TTL.
-- Requests 7-8: escritura y consulta flexible con `jsonb`.
-- Requests 9-13: creación de evento Outbox, disparo de `pg_notify`, recepción por `LISTEN`, auditoría de notificaciones y cambio de estado a `PUBLISHED`.
-- Requests 14-15: persistencia y consulta de PEM en `bytea`.
-
 # Consultas SQL útiles
-
-Ver tablas:
-
-```sql
-\dt
-```
 
 Revisar documentos full-text:
 
@@ -648,15 +522,3 @@ Revisar certificados:
 select alias, owner, algorithm, fingerprint_sha256, octet_length(pem_content) as size_bytes
 from payment_digital_certificates;
 ```
-
-# Notas productivas y futuras mejoras
-
-Para mantener la PoC enfocada, no se agregaron componentes innecesarios. En una implementación productiva se recomendaría agregar, según necesidad real:
-
-- Publicador real de outbox hacia Kafka, RabbitMQ, SQS/SNS o EventBridge.
-- Job de reproceso de eventos `PENDING` para cubrir ventanas donde el listener no estuvo activo.
-- Servicio real de embeddings para `pgvector`.
-- Seguridad OAuth2/JWT, mTLS o integración CIAM.
-- Observabilidad con OpenTelemetry.
-- Testcontainers para pruebas de integración con PostgreSQL real.
-- Separación de secretos con Vault, AWS Secrets Manager o equivalente.
