@@ -1,6 +1,6 @@
 # Axiz Payment Processing PostgreSQL PoC
 
-Microservicio REST de demostración para una fintech de pagos. La PoC implementa **DDD táctico** con **arquitectura hexagonal**, **Java 25**, **Spring Boot 4.1.0**, **Spring MVC**, **JDBC**, **Flyway** y **PostgreSQL + pgvector**.
+Microservicio REST de demostración para una fintech de pagos. La PoC implementa **DDD táctico** con **arquitectura hexagonal**, **Java 25**, **Spring Boot 4.1.0**, **Spring MVC**, **Jackson 2**, **JDBC**, **Flyway** y **PostgreSQL + pgvector**.
 
 El objetivo es demostrar, en un único microservicio, seis capacidades de PostgreSQL aplicadas a payment processing:
 
@@ -19,6 +19,7 @@ El objetivo es demostrar, en un único microservicio, seis capacidades de Postgr
 
 - **Java 25** definido en `pom.xml` con `maven.compiler.release=25`.
 - **Spring Boot 4.1.0** como versión base.
+- **Jackson 2** se declara explícitamente con `spring-boot-jackson2`, `jackson-databind` y `jackson-datatype-jsr310`, porque Spring Boot 4 separa más los módulos y el proyecto usa APIs `com.fasterxml.jackson.*`.
 - **Spring MVC** mediante `spring-boot-starter-webmvc`, evitando el starter clásico `spring-boot-starter-web`.
 - **JDBC + JdbcTemplate**, porque permite usar capacidades nativas de PostgreSQL (`tsvector`, `vector`, `jsonb`, `bytea`, `LISTEN/NOTIFY`) sin forzar un ORM donde no aporta valor en la PoC.
 - **Flyway como único mecanismo de schema + seed data**. No hay scripts duplicados de inicialización en Docker.

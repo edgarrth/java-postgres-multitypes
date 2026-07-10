@@ -57,3 +57,48 @@ GET http://localhost:8080/api/v1/payment-events/notifications?limit=20
 ```
 
 4. Debe retornar la notificación persistida en `payment_event_notifications`.
+
+
+## Corrección aplicada por error de compilación reportado
+
+Se recibió evidencia de `mvn clean verify` fallando en compilación porque no existían en el classpath los paquetes:
+
+- `com.fasterxml.jackson.databind`
+- `com.fasterxml.jackson.core.type`
+
+Causa: el código usa Jackson 2 (`ObjectMapper`, `TypeReference`, `SerializationFeature`), pero el `pom.xml` no declaraba explícitamente Jackson. En Spring Boot 4 los módulos/starter están más desacoplados y no se debe asumir que `spring-boot-starter-webmvc` agregará automáticamente las APIs `com.fasterxml.jackson.*`.
+
+Corrección aplicada al `pom.xml`:
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-jackson2</artifactId>
+</dependency>
+<dependency>
+    <groupId>com.fasterxml.jackson.core</groupId>
+    <artifactId>jackson-databind</artifactId>
+</dependency>
+<dependency>
+    <groupId>com.fasterxml.jackson.datatype</groupId>
+    <artifactId>jackson-datatype-jsr310</artifactId>
+</dependency>
+```
+
+Motivo:
+
+- `spring-boot-jackson2` integra el soporte Boot para Jackson 2.
+- `jackson-databind` aporta `ObjectMapper` y `SerializationFeature`.
+- `jackson-datatype-jsr310` permite serializar/deserializar tipos Java Time usados en DTOs y modelos.
+
+Validación disponible en este sandbox posterior a la corrección:
+
+- `pom.xml` parsea correctamente como XML.
+- Las dependencias requeridas aparecen en el `pom.xml`.
+- El ZIP fue regenerado con la corrección.
+
+Validación completa esperada en ambiente local con JDK 25 y Maven:
+
+```bash
+mvn clean verify
+```
